@@ -1,39 +1,55 @@
 import WorldMap from './components/WorldMap';
 import SearchBar from './components/SearchBar';
-import { useState } from 'react';
+import { useTravelStorage } from './utils/useTravelStorage';
 
 function App() {
-  const [selectedCountry, setSelectedCountry] = useState([]);
-  const [selectedCities, setSelectedCities] = useState([]);
+  const [travel, setTravel ] = useTravelStorage();
+
+  const addCountry = (feat, prev) => {
+    const iso = feat.properties.short_code?.toUpperCase();
+    if (!iso || prev.countries.includes(iso)) return prev;
+
+    return {
+      ...prev,
+      countries: [...prev.countries, iso]
+    }
+  }
 
   const addPlace = (feat) => {
-    const { id, place_type, text, center } = feat;
+    const isCountry = feat.place_type.includes("country");
+    const isCity = feat.place_type.includes("place");
 
-    if (place_type.includes("country")) {
-      console.log(feat.properties)
-      const iso = feat.properties.short_code?.toUpperCase();
-      console.log(iso)
-      setSelectedCountry((prev) =>
-        prev.includes(iso) ? prev : [...prev, iso]
-      )
-    } else if (place_type.includes("place")) {
-      const n = feat.context.length
-      const iso = feat.context[n-1].short_code.toUpperCase();
-      console.log(iso);
-      setSelectedCities((prev) =>
-        prev.find((c) => c.id === id) ? prev : [...prev, {id, text, center}]
-      )
-      setSelectedCountry((prev) =>
-        prev.includes(iso) ? prev : [...prev, iso]
-      )
-    }
+    setTravel((prev) => {
+      if (isCountry) {
+        return addCountry(feat, prev);
+      }
+
+      if (isCity) {
+        if (prev.cities.find((c) => c.id === feat.id)) return prev;
+
+        return{
+          ...prev,
+          cities: [
+            ...prev.cities,
+            {
+              id: feat.id,
+              name: feat.text,
+              center: feat.center,
+              country: feat.context?.find(c => c.id.startsWith("country"))?.short_code?.toUpperCase()
+            }
+          ]
+        }
+      }
+
+      return prev;
+    })
   }
 
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <SearchBar onAdd={addPlace}/>
-      <WorldMap selectedCountry={selectedCountry} selectedCities={selectedCities}/>
+      <WorldMap selectedCountry={travel.countries} selectedCities={travel.cities}/>
     </div>
   );
 }

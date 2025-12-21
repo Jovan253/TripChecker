@@ -10,8 +10,8 @@ const countryFillLayer = (selected) => ({
     "fill-color": [
       "case",
       ["in", ["get", "iso_3166_1"], ["literal", selected]],
-      "#ff0000", // selected country
-      "#000000"  // default
+      "#2C46B0", // selected country
+      "#2B2A2A"  // default
     ],
     "fill-opacity": 1
   }
@@ -23,7 +23,7 @@ const borderLayer = {
   source: "countries",
   "source-layer": "country_boundaries",
   paint: {
-    "line-color": "#555",
+    "line-color": "#444",
     "line-width": 1
   }
 };
@@ -68,7 +68,7 @@ export default function WorldMap({ selectedCountry, selectedCities }) {
           <svg width="20" height="30" viewBox="0 0 24 36" xmlns="http://www.w3.org/2000/svg">
             <path
               d="M12 0C7.03 0 3 4.03 3 9c0 7.5 9 27 9 27s9-19.5 9-27c0-4.97-4.03-9-9-9z"
-              fill="#0000ff"
+              fill="#C73428"
             />
             <circle cx="12" cy="9" r="3" fill="white" />
           </svg>
