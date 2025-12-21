@@ -1,5 +1,5 @@
 import Map from "react-map-gl/mapbox";
-import { Source, Layer, Marker } from "react-map-gl/mapbox";
+import { Source, Layer } from "react-map-gl/mapbox";
 
 const countryFillLayer = (selected) => ({
   id: "country-fills",
@@ -58,24 +58,32 @@ export default function WorldMap({ selectedCountry, selectedCities }) {
         <Layer {...borderLayer} />
       </Source>
 
-      {selectedCities.map((city) => (
-        <Marker
-          key={city.id}
-          longitude={city.center[0]}
-          latitude={city.center[1]}
-          anchor="bottom"
-        >
-          <svg width="20" height="30" viewBox="0 0 24 36" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M12 0C7.03 0 3 4.03 3 9c0 7.5 9 27 9 27s9-19.5 9-27c0-4.97-4.03-9-9-9z"
-              fill="#C73428"
-            />
-            <circle cx="12" cy="9" r="3" fill="white" />
-          </svg>
-
-        </Marker>
-      ))}
-
+      <Source
+        id="cities"
+        type="geojson"
+        data={{
+          type: "FeatureCollection",
+          features: selectedCities.map(city => ({
+            type: "Feature",
+            id: city.id,
+            geometry: {
+              type: "Point",
+              coordinates: city.center
+            }
+          }))
+        }}
+      >
+        <Layer
+          id="city-circles"
+          type="circle"
+          paint={{
+            'circle-radius': 4,
+            "circle-color": "#C73428",
+            "circle-stroke-width": 1.5,
+            "circle-stroke-color": "#fff"
+          }}
+        />
+      </Source>
     </Map>
   );
 }
