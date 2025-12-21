@@ -5,43 +5,40 @@ import { useTravelStorage } from './utils/useTravelStorage';
 function App() {
   const [travel, setTravel ] = useTravelStorage();
 
-  const addCountry = (feat, prev) => {
-    const iso = feat.properties.short_code?.toUpperCase();
-    if (!iso || prev.countries.includes(iso)) return prev;
-
-    return {
-      ...prev,
-      countries: [...prev.countries, iso]
-    }
-  }
-
   const addPlace = (feat) => {
     const isCountry = feat.place_type.includes("country");
     const isCity = feat.place_type.includes("place");
 
     setTravel((prev) => {
+      let next = { ...prev };
+
       if (isCountry) {
-        return addCountry(feat, prev);
+        const iso = feat.properties.short_code?.toUpperCase();
+        if (iso && !prev.countries.includes(iso)) {
+          next.countries = [...prev.countries, iso];
+        }
       }
 
       if (isCity) {
-        if (prev.cities.find((c) => c.id === feat.id)) return prev;
-
-        return{
-          ...prev,
-          cities: [
+        if (!prev.cities.find((c) => c.id === feat.id)) {
+          const countryCode = feat.context?.find(c => c.id.startsWith("country"))?.short_code?.toUpperCase();
+          next.cities = [
             ...prev.cities,
             {
               id: feat.id,
               name: feat.text,
               center: feat.center,
-              country: feat.context?.find(c => c.id.startsWith("country"))?.short_code?.toUpperCase()
+              country: countryCode
             }
-          ]
+          ];
+
+          if (countryCode && !prev.countries.includes(countryCode)) {
+            next.countries = [...next.countries, countryCode]
+          }
         }
       }
 
-      return prev;
+      return next;
     })
   }
 
