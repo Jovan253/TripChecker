@@ -1,8 +1,4 @@
 import { useState } from "react";
-import { COUNTRIES } from "../data/countries";
-import { CITIES } from "../data/cities";
-
-const MAPBOX_TOKEN = "pk.eyJ1IjoiaGFkemljMjUzIiwiYSI6ImNtajk1eXdoazAxMWMzZHNqMW9vZ2dvZDEifQ.N1dsvd6lCWDGN0i5JLICaA"
 
 export default function SearchBar({ onAdd }){
     const [query, setQuery] = useState("");
@@ -22,7 +18,8 @@ export default function SearchBar({ onAdd }){
             new URLSearchParams({
                 access_token: process.env.REACT_APP_MAPBOX_TOKEN,
                 types: "country,place",
-                limit: 8
+                limit: 8,
+                language: "en"
             })
         )
 
