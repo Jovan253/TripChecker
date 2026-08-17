@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 
 export default function AuthPage() {
@@ -39,6 +39,14 @@ export default function AuthPage() {
       setError(err.message);
     }
   };
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("demo")) {
+      window.history.replaceState({}, "", window.location.pathname);
+      handleDemo();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div style={styles.container}>
