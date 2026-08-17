@@ -1,19 +1,40 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Map from "react-map-gl/mapbox";
 import { Source, Layer, Popup } from "react-map-gl/mapbox";
+import { lerpColor } from "../utils/colorScale";
 
-const countryFillLayer = (selected) => ({
+const UNVISITED_COLOR = "#2B2A2A";
+const LIGHT_VISITED_COLOR = "#6C86D6";
+const MEDIUM_VISITED_COLOR = lerpColor(LIGHT_VISITED_COLOR, "#111A47", 0.5);
+const DARK_VISITED_COLOR = "#111A47";
+
+function colorForCityCount(count) {
+  if (count >= 5) return DARK_VISITED_COLOR;
+  if (count >= 2) return MEDIUM_VISITED_COLOR;
+  return LIGHT_VISITED_COLOR;
+}
+
+function buildCountryFillColor(selected, cityCountByCountry) {
+  if (selected.length === 0) {
+    return UNVISITED_COLOR;
+  }
+
+  const matchExpression = ["match", ["get", "iso_3166_1"]];
+  for (const iso of selected) {
+    matchExpression.push(iso, colorForCityCount(cityCountByCountry[iso] || 0));
+  }
+  matchExpression.push(UNVISITED_COLOR);
+
+  return matchExpression;
+}
+
+const countryFillLayer = (selected, cityCountByCountry) => ({
   id: "country-fills",
   type: "fill",
   source: "countries",
   "source-layer": "country_boundaries",
   paint: {
-    "fill-color": [
-      "case",
-      ["in", ["get", "iso_3166_1"], ["literal", selected]],
-      "#2C46B0", // selected country
-      "#2B2A2A"  // default
-    ],
+    "fill-color": buildCountryFillColor(selected, cityCountByCountry),
     "fill-opacity": 1
   }
 });
@@ -29,9 +50,14 @@ const borderLayer = {
   }
 };
 
-export default function WorldMap({ selectedCountry, selectedCities }) {
+export default function WorldMap({ selectedCountry, selectedCities, cityCountByCountry = {}, onRemoveCity }) {
   const [hoverInfo, setHoverInfo] = useState(null);
   const [clickedCity, setClickedCity] = useState(null);
+
+  const fillLayer = useMemo(
+    () => countryFillLayer(selectedCountry, cityCountByCountry),
+    [selectedCountry, cityCountByCountry]
+  );
 
   return (
     <Map
@@ -75,6 +101,7 @@ export default function WorldMap({ selectedCountry, selectedCities }) {
         const feature = e.features?.[0];
         if (feature?.layer.id === "city-circles") {
           setClickedCity({
+            id: feature.properties.id,
             name: feature.properties.name,
             coordinates: feature.geometry.coordinates
           });
@@ -87,7 +114,7 @@ export default function WorldMap({ selectedCountry, selectedCities }) {
         type="vector"
         url="mapbox://mapbox.country-boundaries-v1"
       >
-        <Layer {...countryFillLayer(selectedCountry)} />
+        <Layer {...fillLayer} />
         <Layer {...borderLayer} />
       </Source>
 
@@ -100,11 +127,12 @@ export default function WorldMap({ selectedCountry, selectedCities }) {
             type: "Feature",
             id: city.id,
             properties: {
+              id: city.id,
               name: city.name,
             },
             geometry: {
               type: "Point",
-              coordinates: city.center
+              coordinates: [city.lng, city.lat]
             }
           }))
         }}
@@ -141,9 +169,37 @@ export default function WorldMap({ selectedCountry, selectedCities }) {
           onClose={() => setClickedCity(null)}
           offset={8}
         >
-          {clickedCity.name}
+          <div style={styles.clickedCityPopup}>
+            <span>{clickedCity.name}</span>
+            <button
+              style={styles.removeButton}
+              onClick={() => {
+                onRemoveCity(clickedCity.id);
+                setClickedCity(null);
+              }}
+            >
+              Remove
+            </button>
+          </div>
         </Popup>
       )}
     </Map>
   );
 }
+
+const styles = {
+  clickedCityPopup: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8
+  },
+  removeButton: {
+    padding: "2px 8px",
+    fontSize: 12,
+    borderRadius: 4,
+    border: "1px solid #C73428",
+    background: "none",
+    color: "#C73428",
+    cursor: "pointer"
+  }
+};

@@ -17,7 +17,7 @@ export default function SearchBar({ onAdd }){
             `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(value)}.json?` +
             new URLSearchParams({
                 access_token: process.env.REACT_APP_MAPBOX_TOKEN,
-                types: "country,place",
+                types: "place",
                 limit: 8,
                 language: "en"
             })
@@ -30,7 +30,7 @@ export default function SearchBar({ onAdd }){
     return (
         <div style={styles.container}>
             <input
-                placeholder="Search countries or cities..."
+                placeholder="Search cities..."
                 value={query}
                 onChange={handeChange}
                 style={styles.input}
