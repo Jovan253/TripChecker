@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-export default function SearchBar({ onAdd }){
+export default function SearchBar({ onAdd }) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
 
-    const handeChange = async (e) => {
+    const handleChange = async (e) => {
         const value = e.target.value;
         setQuery(value);
 
@@ -17,22 +17,22 @@ export default function SearchBar({ onAdd }){
             `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(value)}.json?` +
             new URLSearchParams({
                 access_token: process.env.REACT_APP_MAPBOX_TOKEN,
-                types: "country,place",
+                types: "place",
                 limit: 8,
                 language: "en"
             })
-        )
+        );
 
         const data = await res.json();
         setResults(data.features || []);
-    }
+    };
 
     return (
         <div style={styles.container}>
             <input
-                placeholder="Search countries or cities..."
+                placeholder="Search cities..."
                 value={query}
-                onChange={handeChange}
+                onChange={handleChange}
                 style={styles.input}
             />
 
@@ -59,30 +59,33 @@ export default function SearchBar({ onAdd }){
 
 const styles = {
     container: {
-      position: "absolute",
-      top: 20,
-      left: "50%",
-      transform: "translateX(-50%)",
-      zIndex: 10,
-      width: 300,
+        position: "absolute",
+        top: 20,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 10,
+        width: 320,
     },
     input: {
-      width: "100%",
-      padding: "10px",
-      fontSize: 14
+        width: "100%",
+        padding: "10px",
+        fontSize: 14,
+        boxSizing: "border-box"
     },
     dropdown: {
-      background: "#fff",
-      border: "1px solid #ccc",
-      maxHeight: 200,
-      overflowY: "auto"
+        background: "#fff",
+        border: "1px solid #ccc",
+        maxHeight: 220,
+        overflowY: "auto"
     },
     option: {
-      width: "100%",
-      padding: "8px",
-      textAlign: "left",
-      background: "none",
-      border: "none",
-      cursor: "pointer"
+        width: "100%",
+        padding: "8px 10px",
+        textAlign: "left",
+        background: "none",
+        border: "none",
+        borderBottom: "1px solid #f0f0f0",
+        cursor: "pointer",
+        fontSize: 13
     }
-  };
+};

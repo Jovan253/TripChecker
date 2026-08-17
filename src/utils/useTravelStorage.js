@@ -6,9 +6,15 @@ export function useTravelStorage() {
     const [data, setData] = useState(() => {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
-            return raw ? JSON.parse(raw) : { countries: [], cities: []};
+            if (!raw) return { countries: [], cities: [], regions: [] };
+            const parsed = JSON.parse(raw);
+            return {
+                countries: parsed.countries || [],
+                cities: parsed.cities || [],
+                regions: parsed.regions || []
+            };
         } catch {
-            return { countries: [], cities: []};
+            return { countries: [], cities: [], regions: [] };
         }
     });
 

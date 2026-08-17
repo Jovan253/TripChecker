@@ -2,17 +2,18 @@ import { useState } from "react";
 import Map from "react-map-gl/mapbox";
 import { Source, Layer, Popup } from "react-map-gl/mapbox";
 
-const countryFillLayer = (selected) => ({
+const countryFillLayer = (selected, visible) => ({
   id: "country-fills",
   type: "fill",
   source: "countries",
   "source-layer": "country_boundaries",
+  layout: { visibility: visible ? "visible" : "none" },
   paint: {
     "fill-color": [
       "case",
       ["in", ["get", "iso_3166_1"], ["literal", selected]],
-      "#2C46B0", // selected country
-      "#2B2A2A"  // default
+      "#2C46B0",
+      "#2B2A2A"
     ],
     "fill-opacity": 1
   }
@@ -29,9 +30,41 @@ const borderLayer = {
   }
 };
 
-export default function WorldMap({ selectedCountry, selectedCities }) {
+const regionFillLayer = (visible) => ({
+  id: "region-fills",
+  type: "fill",
+  layout: { visibility: visible ? "visible" : "none" },
+  paint: {
+    "fill-color": "#2C46B0",
+    "fill-opacity": 0.85
+  }
+});
+
+const regionBorderLayer = (visible) => ({
+  id: "region-borders",
+  type: "line",
+  layout: { visibility: visible ? "visible" : "none" },
+  paint: {
+    "line-color": "#4a6fd6",
+    "line-width": 1.5
+  }
+});
+
+export default function WorldMap({ selectedCountry, selectedCities, selectedRegions = [], showRegions = false }) {
   const [hoverInfo, setHoverInfo] = useState(null);
   const [clickedCity, setClickedCity] = useState(null);
+
+  const regionsGeoJSON = {
+    type: "FeatureCollection",
+    features: selectedRegions
+      .filter(r => r.geometry)
+      .map(r => ({
+        type: "Feature",
+        id: r.id,
+        properties: { name: r.name },
+        geometry: r.geometry
+      }))
+  };
 
   return (
     <Map
@@ -81,14 +114,22 @@ export default function WorldMap({ selectedCountry, selectedCities }) {
         }
       }}
     >
-      {/* Country Fills */}
       <Source
         id="countries"
         type="vector"
         url="mapbox://mapbox.country-boundaries-v1"
       >
-        <Layer {...countryFillLayer(selectedCountry)} />
+        <Layer {...countryFillLayer(selectedCountry, !showRegions)} />
         <Layer {...borderLayer} />
+      </Source>
+
+      <Source
+        id="regions"
+        type="geojson"
+        data={regionsGeoJSON}
+      >
+        <Layer {...regionFillLayer(showRegions)} />
+        <Layer {...regionBorderLayer(showRegions)} />
       </Source>
 
       <Source
@@ -99,13 +140,8 @@ export default function WorldMap({ selectedCountry, selectedCities }) {
           features: selectedCities.map(city => ({
             type: "Feature",
             id: city.id,
-            properties: {
-              name: city.name,
-            },
-            geometry: {
-              type: "Point",
-              coordinates: city.center
-            }
+            properties: { name: city.name },
+            geometry: { type: "Point", coordinates: city.center }
           }))
         }}
       >
