@@ -35,12 +35,14 @@ const SUBREGION_TO_CONTINENT = {
 export const CONTINENTS = ["Africa", "Asia", "Europe", "North America", "South America", "Oceania"];
 
 const ISO_TO_CONTINENT = {};
+const ISO_TO_COUNTRY_INFO = {};
 const COUNTRIES_BY_CONTINENT = Object.fromEntries(CONTINENTS.map((c) => [c, 0]));
 
 for (const country of countries) {
   const continent = SUBREGION_TO_CONTINENT[country.subregion];
   if (!continent) continue;
   ISO_TO_CONTINENT[country.cca2] = continent;
+  ISO_TO_COUNTRY_INFO[country.cca2] = { name: country.name.common, flag: country.flag };
   COUNTRIES_BY_CONTINENT[continent] += 1;
 }
 
@@ -48,4 +50,8 @@ export { COUNTRIES_BY_CONTINENT };
 
 export function getContinent(iso2) {
   return ISO_TO_CONTINENT[iso2];
+}
+
+export function getCountryInfo(iso2) {
+  return ISO_TO_COUNTRY_INFO[iso2];
 }

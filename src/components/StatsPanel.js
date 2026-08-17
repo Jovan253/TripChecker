@@ -1,13 +1,20 @@
-import { useMemo } from "react";
-import { CONTINENTS, COUNTRIES_BY_CONTINENT, getContinent } from "../utils/continents";
+import { useMemo, useState } from "react";
+import { CONTINENTS, COUNTRIES_BY_CONTINENT, getContinent, getCountryInfo } from "../utils/continents";
 
 export default function StatsPanel({ countries, cities }) {
+  const [expandedContinent, setExpandedContinent] = useState(null);
+
   const statsByContinent = useMemo(() => {
-    const stats = Object.fromEntries(CONTINENTS.map((c) => [c, { countriesVisited: 0, citiesVisited: 0 }]));
+    const stats = Object.fromEntries(
+      CONTINENTS.map((c) => [c, { countriesVisited: 0, citiesVisited: 0, isoCodes: [] }])
+    );
 
     for (const iso of countries) {
       const continent = getContinent(iso);
-      if (continent) stats[continent].countriesVisited += 1;
+      if (continent) {
+        stats[continent].countriesVisited += 1;
+        stats[continent].isoCodes.push(iso);
+      }
     }
 
     for (const city of cities) {
@@ -25,17 +32,44 @@ export default function StatsPanel({ countries, cities }) {
       </div>
 
       {CONTINENTS.map((continent) => {
-        const { countriesVisited, citiesVisited } = statsByContinent[continent];
+        const { countriesVisited, citiesVisited, isoCodes } = statsByContinent[continent];
         const total = COUNTRIES_BY_CONTINENT[continent];
         const percent = total ? Math.round((countriesVisited / total) * 100) : 0;
         const visited = countriesVisited > 0;
+        const expanded = expandedContinent === continent;
 
         return (
-          <div key={continent} style={visited ? styles.row : styles.rowDim}>
-            <span style={styles.continentName}>{continent}</span>
-            <span style={styles.rowStats}>
-              {countriesVisited}/{total} countries ({percent}%) &middot; {citiesVisited} cities
-            </span>
+          <div key={continent}>
+            <div
+              style={{
+                ...(visited ? styles.row : styles.rowDim),
+                cursor: visited ? "pointer" : "default"
+              }}
+              onClick={() => visited && setExpandedContinent(expanded ? null : continent)}
+            >
+              <span style={styles.continentName}>
+                {continent} {visited && (expanded ? "▾" : "▸")}
+              </span>
+              <span style={styles.rowStats}>
+                {countriesVisited}/{total} countries ({percent}%) &middot; {citiesVisited} cities
+              </span>
+            </div>
+
+            {expanded && (
+              <div style={styles.flags}>
+                {isoCodes.map((iso) => {
+                  const info = getCountryInfo(iso);
+                  return (
+                    <span
+                      key={iso}
+                      title={info?.name || iso}
+                      className={`fi fi-${iso.toLowerCase()}`}
+                      style={styles.flag}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}
@@ -50,6 +84,8 @@ const styles = {
     right: 20,
     zIndex: 10,
     width: 280,
+    maxHeight: "70vh",
+    overflowY: "auto",
     padding: 16,
     borderRadius: 8,
     background: "#2B2A2A",
@@ -84,5 +120,17 @@ const styles = {
   rowStats: {
     color: "#ccc",
     fontSize: 12
+  },
+  flags: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 6,
+    paddingTop: 6
+  },
+  flag: {
+    width: 24,
+    height: 18,
+    borderRadius: 2,
+    cursor: "default"
   }
 };
