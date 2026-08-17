@@ -55,7 +55,7 @@ const borderLayer = {
   }
 };
 
-export default function WorldMap({ selectedCountry, selectedCities, cityCountByCountry = {}, onRemoveCity }) {
+export default function WorldMap({ selectedCountry, selectedCities, cityCountByCountry = {}, onRemoveCity, showCities = true }) {
   const [hoverInfo, setHoverInfo] = useState(null);
   const [clickedCity, setClickedCity] = useState(null);
 
@@ -145,6 +145,7 @@ export default function WorldMap({ selectedCountry, selectedCities, cityCountByC
         <Layer
           id="city-circles"
           type="circle"
+          layout={{ visibility: showCities ? "visible" : "none" }}
           paint={{
             'circle-radius': 4,
             "circle-color": "#C73428",
@@ -154,7 +155,7 @@ export default function WorldMap({ selectedCountry, selectedCities, cityCountByC
         />
       </Source>
 
-      {hoverInfo && (
+      {showCities && hoverInfo && (
         <Popup
           longitude={hoverInfo.lngLat.lng}
           latitude={hoverInfo.lngLat.lat}
@@ -167,7 +168,7 @@ export default function WorldMap({ selectedCountry, selectedCities, cityCountByC
         </Popup>
       )}
 
-      {clickedCity && (
+      {showCities && clickedCity && (
         <Popup
           longitude={clickedCity.coordinates[0]}
           latitude={clickedCity.coordinates[1]}
