@@ -17,7 +17,13 @@ function App() {
     setTravel((prev) => {
       if (prev.cities.find((c) => c.id === feat.id)) return prev;
 
-      const countryCode = feat.context?.find(c => c.id.startsWith("country"))?.short_code?.toUpperCase();
+      // City-states (Singapore, Monaco, Vatican City...) have no context array
+      // since they have no parent admin division - fall back to the feature's
+      // own short_code, which is present when the feature is itself a country.
+      const countryCode = (
+        feat.context?.find(c => c.id.startsWith("country"))?.short_code
+        ?? feat.properties?.short_code
+      )?.toUpperCase();
       const cities = [
         ...prev.cities,
         {

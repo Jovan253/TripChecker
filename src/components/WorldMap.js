@@ -8,7 +8,12 @@ const LIGHT_VISITED_COLOR = "#6C86D6";
 const MEDIUM_VISITED_COLOR = lerpColor(LIGHT_VISITED_COLOR, "#111A47", 0.5);
 const DARK_VISITED_COLOR = "#111A47";
 
-function colorForCityCount(count) {
+// City-states: the country IS the city, so visiting it once means the whole
+// country is visited - skip the light/medium tiers and go straight to dark.
+const CITY_STATE_COUNTRIES = new Set(["SG", "MC", "VA"]);
+
+function colorForCityCount(iso, count) {
+  if (CITY_STATE_COUNTRIES.has(iso) && count >= 1) return DARK_VISITED_COLOR;
   if (count >= 5) return DARK_VISITED_COLOR;
   if (count >= 2) return MEDIUM_VISITED_COLOR;
   return LIGHT_VISITED_COLOR;
@@ -21,7 +26,7 @@ function buildCountryFillColor(selected, cityCountByCountry) {
 
   const matchExpression = ["match", ["get", "iso_3166_1"]];
   for (const iso of selected) {
-    matchExpression.push(iso, colorForCityCount(cityCountByCountry[iso] || 0));
+    matchExpression.push(iso, colorForCityCount(iso, cityCountByCountry[iso] || 0));
   }
   matchExpression.push(UNVISITED_COLOR);
 
