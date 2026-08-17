@@ -1,13 +1,15 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import WorldMap from './components/WorldMap';
 import SearchBar from './components/SearchBar';
 import AuthPage from './components/Auth/AuthPage';
+import StatsPanel from './components/StatsPanel';
 import { useTravelData } from './utils/useTravelData';
 import { useAuth } from './contexts/AuthContext';
 
 function App() {
   const { user, loading, logOut } = useAuth();
   const [travel, setTravel ] = useTravelData();
+  const [showStats, setShowStats] = useState(false);
 
   const addPlace = (feat) => {
     if (!feat.place_type.includes("place")) return;
@@ -72,18 +74,26 @@ function App() {
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <SearchBar onAdd={addPlace}/>
-      <button onClick={logOut} style={styles.signOut}>Sign out</button>
+      <div style={styles.topRight}>
+        <button onClick={() => setShowStats((prev) => !prev)} style={styles.button}>Stats</button>
+        <button onClick={logOut} style={styles.button}>Sign out</button>
+      </div>
+      {showStats && <StatsPanel countries={travel.countries} cities={travel.cities} />}
       <WorldMap selectedCountry={travel.countries} selectedCities={travel.cities} cityCountByCountry={cityCountByCountry} onRemoveCity={removeCity}/>
     </div>
   );
 }
 
 const styles = {
-  signOut: {
+  topRight: {
     position: "absolute",
     top: 20,
     right: 20,
     zIndex: 10,
+    display: "flex",
+    gap: 8
+  },
+  button: {
     padding: "8px 14px",
     fontSize: 13,
     borderRadius: 4,
