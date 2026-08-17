@@ -1,54 +1,97 @@
+import { useMemo } from 'react';
 import WorldMap from './components/WorldMap';
 import SearchBar from './components/SearchBar';
-import { useTravelStorage } from './utils/useTravelStorage';
+import AuthPage from './components/Auth/AuthPage';
+import { useTravelData } from './utils/useTravelData';
+import { useAuth } from './contexts/AuthContext';
 
 function App() {
-  const [travel, setTravel ] = useTravelStorage();
+  const { user, loading, logOut } = useAuth();
+  const [travel, setTravel ] = useTravelData();
 
   const addPlace = (feat) => {
-    const isCountry = feat.place_type.includes("country");
-    const isCity = feat.place_type.includes("place");
+    if (!feat.place_type.includes("place")) return;
 
     setTravel((prev) => {
-      let next = { ...prev };
+      if (prev.cities.find((c) => c.id === feat.id)) return prev;
 
-      if (isCountry) {
-        const iso = feat.properties.short_code?.toUpperCase();
-        if (iso && !prev.countries.includes(iso)) {
-          next.countries = [...prev.countries, iso];
+      const countryCode = feat.context?.find(c => c.id.startsWith("country"))?.short_code?.toUpperCase();
+      const cities = [
+        ...prev.cities,
+        {
+          id: feat.id,
+          name: feat.text,
+          lng: feat.center[0],
+          lat: feat.center[1],
+          country: countryCode
         }
-      }
+      ];
 
-      if (isCity) {
-        if (!prev.cities.find((c) => c.id === feat.id)) {
-          const countryCode = feat.context?.find(c => c.id.startsWith("country"))?.short_code?.toUpperCase();
-          next.cities = [
-            ...prev.cities,
-            {
-              id: feat.id,
-              name: feat.text,
-              center: feat.center,
-              country: countryCode
-            }
-          ];
+      const countries = countryCode && !prev.countries.includes(countryCode)
+        ? [...prev.countries, countryCode]
+        : prev.countries;
 
-          if (countryCode && !prev.countries.includes(countryCode)) {
-            next.countries = [...next.countries, countryCode]
-          }
-        }
-      }
-
-      return next;
+      return { cities, countries };
     })
   }
 
+  const removeCity = (cityId) => {
+    setTravel((prev) => {
+      const city = prev.cities.find((c) => c.id === cityId);
+      if (!city) return prev;
+
+      const cities = prev.cities.filter((c) => c.id !== cityId);
+      const countryStillVisited = cities.some((c) => c.country === city.country);
+
+      return {
+        cities,
+        countries: countryStillVisited
+          ? prev.countries
+          : prev.countries.filter((iso) => iso !== city.country)
+      };
+    })
+  }
+
+  const cityCountByCountry = useMemo(() => {
+    const counts = {};
+    for (const city of travel.cities) {
+      if (!city.country) continue;
+      counts[city.country] = (counts[city.country] || 0) + 1;
+    }
+    return counts;
+  }, [travel.cities]);
+
+  if (loading) {
+    return <div style={{ width: "100%", height: "100%", background: "#1a1a1a" }} />;
+  }
+
+  if (!user) {
+    return <AuthPage />;
+  }
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <SearchBar onAdd={addPlace}/>
-      <WorldMap selectedCountry={travel.countries} selectedCities={travel.cities}/>
+      <button onClick={logOut} style={styles.signOut}>Sign out</button>
+      <WorldMap selectedCountry={travel.countries} selectedCities={travel.cities} cityCountByCountry={cityCountByCountry} onRemoveCity={removeCity}/>
     </div>
   );
 }
+
+const styles = {
+  signOut: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    zIndex: 10,
+    padding: "8px 14px",
+    fontSize: 13,
+    borderRadius: 4,
+    border: "1px solid #555",
+    background: "#2B2A2A",
+    color: "#fff",
+    cursor: "pointer"
+  }
+};
 
 export default App;
